@@ -1,4 +1,6 @@
 import express from 'express';
+import Papa from 'papaparse';
+
 const router = express.Router();
 
 let users = [
@@ -43,5 +45,46 @@ router.get('/users', (req, res) => {
 
     res.status(200).json({"results": results});
 });
+
+router.post('/users', (req, res) => {
+    const csvString = String(req.body.file); //works in JSON but not url-encoded format
+    const fixedHeader = ['name', 'salary'];
+
+    const parsedData = Papa.parse(
+        csvString, 
+        {   header: true,
+            transformHeader: (header, i) => fixedHeader[i],
+            delimiter: ",",
+            complete: (results) => {
+                let data = results.data;
+
+                //ensure every row has 2 columns
+                const validData = data.every( record => Object.keys(record).length === 2 );
+
+                if (!validData) {
+                    //error message here
+                    res.status(400).json({"success": 0});
+                } else {
+                    //ensure that salary >= 0, or else discard row
+                    data.forEach( record => record.salary = parseFloat(record.salary) );
+                    data = data.filter( record => record.salary >= 0 );
+                
+                    //add new data into existing user records
+                    data.forEach( record => {
+                        const existingUser = users.find(user => user.name.toLowerCase() === record.name.toLowerCase());
+                
+                        if (typeof existingUser === 'undefined') {
+                            users.push(record);
+                        } else {
+                            existingUser.salary = record.salary;
+                        }
+                    })
+
+                    res.status(201).json({"success": 1})
+                }
+            }
+        }
+    );
+})
 
 export default router;
