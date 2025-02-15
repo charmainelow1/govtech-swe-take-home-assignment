@@ -3,6 +3,7 @@ import path from 'path';
 import users from './routes/users.js'
 import logger from './middleware/logger.js'
 import errorHandler from './middleware/error.js';
+import notFound from './middleware/notFound.js';
 const port = process.env.PORT || 8000;
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(logger);
 app.use('/', users);
 
 //error handler
+app.use(notFound);
 app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));
