@@ -11,6 +11,7 @@
   "author": "Charmaine Low",
   "license": "ISC",
   "dependencies": {
+    "colors": "^1.4.0",
     "express": "^4.21.2",
     "papaparse": "^5.5.2"
   },
