@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import userQuerySchema from '../models/usersQuery.js';
 
 let users = [
     {name: 'Cathy', salary: 4000},
@@ -14,21 +15,25 @@ let users = [
 // @route GET /users
 
 export const getUsers = (req, res, next) => {
-    const min = parseFloat(req.query.min) || 0.0; //min>=0
-    const max = parseFloat(req.query.max) || 4000.0; //max>=min
-    const offset = parseInt(req.query.offset) || 0; //offset>=0
-    const limit = parseInt(req.query.limit) || -1; //limit must be larger than 0
-    const sort = String(req.query.sort).toUpperCase() || 'NONE';
+    const validation = userQuerySchema.validate(req.query);
+    const validationError = validation.error;
+    const validationValue = validation.value;
 
-    let results = users;
-    results = results.slice(offset); //offset applied after filtering by salary range
-    results = results.filter(user => user.salary >= min && user.salary <= max);
-    
-    if (limit != -1) {
-        results = results.slice(0, limit);
+    if (validationError) {
+        const error = new Error(validationError.message);
+        error.status = 400
+        return next(error);     
     }
 
-    if (sort === 'NAME') {
+    let results = users;
+    results = results.slice(validationValue.offset); //offset applied after filtering by salary range
+    results = results.filter(user => user.salary >= validationValue.min && user.salary <= validationValue.max);
+    
+    if (validationValue.limit != -1) {
+        results = results.slice(0, validationValue.limit);
+    }
+
+    if (validationValue.sort.toUpperCase() === 'NAME') {
         results = results.sort((a, b) => {
             const nameA = a.name.toUpperCase(); //sorting is non-case senstive
             const nameB = b.name.toUpperCase();
@@ -39,7 +44,7 @@ export const getUsers = (req, res, next) => {
               return 1;
             } else return 0;
         })
-    } else if (sort === 'SALARY') {
+    } else if (validationValue.sort.toUpperCase() === 'SALARY') {
         results = results.sort((a, b) => a.salary - b.salary);
     }
 
