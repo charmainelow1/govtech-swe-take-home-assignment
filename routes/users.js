@@ -13,9 +13,9 @@ let users = [
     {name: 'Dave', salary: 3000},
 ];
 
-router.get('/users', (req, res) => {
-    const min = parseInt(req.query.min) || 0; //min>=0
-    const max = parseInt(req.query.max) || 4000; //max>=min
+router.get('/users', (req, res, next) => {
+    const min = parseFloat(req.query.min) || 0.0; //min>=0
+    const max = parseFloat(req.query.max) || 4000.0; //max>=min
     const offset = parseInt(req.query.offset) || 0; //offset>=0
     const limit = parseInt(req.query.limit) || -1; //limit must be larger than 0
     const sort = String(req.query.sort).toUpperCase() || 'NONE';
@@ -46,7 +46,7 @@ router.get('/users', (req, res) => {
     res.status(200).json({"results": results});
 });
 
-router.post('/users', (req, res) => {
+router.post('/users', (req, res, next) => {
     const csvString = String(req.body.file); //works in JSON but not url-encoded format
     const fixedHeader = ['name', 'salary'];
 
@@ -62,8 +62,9 @@ router.post('/users', (req, res) => {
                 const validData = data.every( record => Object.keys(record).length === 2 );
 
                 if (!validData) {
-                    //error message here
-                    res.status(400).json({"success": 0});
+                    const error = new Error('CSV File is incorrectly formatted');
+                    error.status = 400
+                    return next(error);
                 } else {
                     //ensure that salary >= 0, or else discard row
                     data.forEach( record => record.salary = parseFloat(record.salary) );
