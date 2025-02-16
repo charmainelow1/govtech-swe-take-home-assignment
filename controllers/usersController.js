@@ -22,7 +22,7 @@ export const getUsers = (req, res, next) => {
         const error = new Error(validationError.message);
         error.status = 400;
         return next(error);     
-    }
+    };
 
     let results = users;
     results = results.slice(validationValue.offset); //offset applied after filtering by salary range
@@ -32,7 +32,7 @@ export const getUsers = (req, res, next) => {
     
     if (validationValue.limit != -1) {
         results = results.slice(0, validationValue.limit);
-    }
+    };
 
     if (validationValue.sort.toUpperCase() === 'NAME') {
         results = results.sort((a, b) => {
@@ -47,18 +47,18 @@ export const getUsers = (req, res, next) => {
         })
     } else if (validationValue.sort.toUpperCase() === 'SALARY') {
         results = results.sort((a, b) => a.salary - b.salary);
-    }
+    };
 
     res.status(200).json({"results": results});
 }
 
-// @desc Add new users
+// @desc Add new users and update salary for existing users
 // @route POST /users
 export const addUsers = (req, res, next) => {
     const csvString = String(req.body.file);
 
     //convert csv string into array of objects
-    let csvData = []
+    let csvData = [];
     const rows = csvString.split('\\n'); //split into rows by newline character
     rows.shift(); //ignore first row
 
@@ -71,7 +71,7 @@ export const addUsers = (req, res, next) => {
             const error = new Error(validationError.message);
             error.status = 400;
             return next(error);     
-        }
+        };
 
         const values = row.split(',');
         const name = String(values[0]);
@@ -95,7 +95,7 @@ export const addUsers = (req, res, next) => {
             users.push(record);
         } else {
             existingUser.salary = record.salary;
-        }
+        };
     })
     res.status(201).json({"success": 1});
 }
