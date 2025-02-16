@@ -1,5 +1,6 @@
+import userQuerySchema from '../models/users.js';
+import csvDataSchema from '../models/upload.js';
 import Papa from 'papaparse';
-import userQuerySchema from '../models/usersQuery.js';
 
 let users = [
     {name: 'Cathy', salary: 4000},
@@ -13,7 +14,6 @@ let users = [
 
 // @desc Get users
 // @route GET /users
-
 export const getUsers = (req, res, next) => {
     const validation = userQuerySchema.validate(req.query);
     const validationError = validation.error;
@@ -21,13 +21,15 @@ export const getUsers = (req, res, next) => {
 
     if (validationError) {
         const error = new Error(validationError.message);
-        error.status = 400
+        error.status = 400;
         return next(error);     
     }
 
     let results = users;
     results = results.slice(validationValue.offset); //offset applied after filtering by salary range
-    results = results.filter(user => user.salary >= validationValue.min && user.salary <= validationValue.max);
+    results = results.filter(
+        user => user.salary >= validationValue.min && user.salary <= validationValue.max
+    );
     
     if (validationValue.limit != -1) {
         results = results.slice(0, validationValue.limit);
@@ -54,7 +56,7 @@ export const getUsers = (req, res, next) => {
 // @desc Add new users
 // @route POST /users
 export const addUsers = (req, res, next) => {
-    const csvString = String(req.body.file); //works in JSON but not url-encoded format
+    const csvString = String(req.body.file);
     const fixedHeader = ['name', 'salary'];
 
     const parsedData = Papa.parse(
@@ -64,32 +66,45 @@ export const addUsers = (req, res, next) => {
             delimiter: ",",
             complete: (results) => {
                 let data = results.data;
+                console.log(data);
 
-                //ensure every row has 2 columns
-                const validData = data.every( record => Object.keys(record).length === 2 );
-
-                if (!validData) {
-                    const error = new Error('CSV File is incorrectly formatted');
-                    error.status = 400
-                    return next(error);
-                } else {
-                    //ensure that salary >= 0, or else discard row
-                    data.forEach( record => record.salary = parseFloat(record.salary) );
-                    data = data.filter( record => record.salary >= 0 );
-                
-                    //add new data into existing user records
-                    data.forEach( record => {
-                        const existingUser = users.find(user => user.name.toLowerCase() === record.name.toLowerCase());
-                
-                        if (typeof existingUser === 'undefined') {
-                            users.push(record);
-                        } else {
-                            existingUser.salary = record.salary;
-                        }
-                    })
-
-                    res.status(201).json({"success": 1})
+                //ensure csv is correctly formatted
+                for (let i=0; i<data.length; i++) {
+                    const record = data[i];
+                    const validation = csvDataSchema.validate(record);
+                    const validationError = validation.error;
+                    if (validationError) {
+                        const error = new Error(validationError.message);
+                        error.status = 400;
+                        return next(error);     
+                    };
                 }
+
+                //get correctly parsed values
+                let validatedData = []
+                for (let i=0; i<data.length; i++) {
+                    const record = data[i];
+                    const validation = csvDataSchema.validate(record);
+                    const validationValue = validation.value;
+                    validatedData.push(validationValue);
+                }
+            
+                //ensure that salary >= 0, or else discard row
+                validatedData = validatedData.filter( record => record.salary >= 0 );
+            
+                //add new data into existing user records
+                validatedData.forEach( record => {
+                    const existingUser = users.find(
+                        user => user.name.toLowerCase() === record.name.toLowerCase()
+                    );
+            
+                    if (typeof existingUser === 'undefined') {
+                        users.push(record);
+                    } else {
+                        existingUser.salary = record.salary;
+                    }
+                })
+                res.status(201).json({"success": 1})
             }
         }
     );

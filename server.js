@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import users from './routes/users.js'
+import upload from './routes/upload.js'
 import logger from './middleware/logger.js'
 import errorHandler from './middleware/error.js';
 import notFound from './middleware/notFound.js';
@@ -17,6 +18,7 @@ app.use(logger);
 
 //routes
 app.use('/', users);
+app.use('/', upload);
 
 //error handler
 app.use(notFound);
