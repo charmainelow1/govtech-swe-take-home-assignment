@@ -1,4 +1,4 @@
 POST http://localhost:8000/upload
 Content-Type: application/x-www-form-urlencoded
 
-file=name,salary\ncathy,3200\neddy,3400
+file=name,salary\ncathy,3200\neddy,3400\njared,-1900
